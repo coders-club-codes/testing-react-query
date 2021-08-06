@@ -5,8 +5,12 @@
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
+import { setupServer } from 'msw/node';
 import { QueryClient, setLogger } from 'react-query';
 
+import { handlers } from './mocks/handlers';
+
+export const server = setupServer(...handlers);
 
 export const testingQueryClient = new QueryClient({
   defaultOptions: {
@@ -17,9 +21,20 @@ export const testingQueryClient = new QueryClient({
   },
 });
 
+beforeAll(() => {
+  // Establish API mocking before all tests.
+  server.listen({
+    onUnhandledRequest: 'error',
+  });
+});
 
 afterEach(() => {
+  server.resetHandlers();
   testingQueryClient.clear();
+});
+
+afterAll(() => {
+  server.close();
 });
 
 setLogger({
